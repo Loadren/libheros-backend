@@ -5,7 +5,7 @@ A backend API built with [NestJS](https://nestjs.com/) and [TypeORM](https://typ
 ## Prerequisites
 
 * Node.js (>= 22)
-* npm or yarn
+* npm
 * PostgreSQL database
 
 ## Setup
