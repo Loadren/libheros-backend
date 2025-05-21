@@ -13,7 +13,7 @@ A backend API built with [NestJS](https://nestjs.com/) and [TypeORM](https://typ
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/yourusername/libheros-backend.git
+   git clone https://github.com/Loadren/libheros-backend.git
    cd libheros-backend
    ```
 
