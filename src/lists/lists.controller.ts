@@ -7,6 +7,7 @@ import {
   Param,
   UseGuards,
   Request,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ListsService } from './lists.service';
@@ -45,6 +46,15 @@ export class ListsController {
     @Request() req: RequestWithUser,
     @Param('id') id: string,
   ): Promise<{ deleted: boolean }> {
+    if (!req.user) {
+      throw new BadRequestException('User not found');
+    }
+    if (!req.user.id) {
+      throw new BadRequestException('User ID not found');
+    }
+    if (!id) {
+      throw new BadRequestException('List ID not found');
+    }
     await this.listsService.remove(req.user.id, id);
     return { deleted: true };
   }

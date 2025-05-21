@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DeleteResult } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { Task } from './entity/task.entity';
 import { List } from '../lists/entity/list.entity';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -32,24 +32,29 @@ export class TasksService {
     listId: string,
     completed?: boolean,
   ): Promise<Task[]> {
-    const query = this.taskRepo
-      .createQueryBuilder('task')
-      .innerJoin('task.list', 'list')
-      .where('list.id = :listId', { listId })
-      .andWhere('list.userId = :userId', { userId });
-    if (completed !== undefined) {
-      query.andWhere('task.completed = :completed', { completed });
-    }
-    return query.getMany();
+    // Build a strongly-typed where object
+    const where: FindOptionsWhere<Task> = {
+      list: { id: listId, user: { id: userId } },
+      // only include completed if it was passed in
+      ...(completed !== undefined ? { completed } : {}),
+    };
+
+    return this.taskRepo.find({
+      where,
+      relations: ['list', 'list.user'],
+    });
   }
 
   async findOne(userId: string, id: string): Promise<Task> {
-    const task = await this.taskRepo
-      .createQueryBuilder('task')
-      .innerJoin('task.list', 'list')
-      .where('task.id = :id', { id })
-      .andWhere('list.userId = :userId', { userId })
-      .getOne();
+    const where: FindOptionsWhere<Task> = {
+      id,
+      list: { user: { id: userId } },
+    };
+
+    const task = await this.taskRepo.findOne({
+      where,
+      relations: ['list', 'list.user'],
+    });
     if (!task) throw new NotFoundException('Task not found');
     return task;
   }
@@ -65,13 +70,7 @@ export class TasksService {
   }
 
   async remove(userId: string, id: string): Promise<void> {
-    const result: DeleteResult = await this.taskRepo
-      .createQueryBuilder()
-      .delete()
-      .from(Task)
-      .where('id = :id', { id })
-      .andWhere('list.user.id = :userId', { userId })
-      .execute();
-    if (result.affected === 0) throw new NotFoundException('Task not found');
+    const task = await this.findOne(userId, id);
+    await this.taskRepo.remove(task);
   }
 }
